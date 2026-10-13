@@ -59,12 +59,13 @@ Left menu → **Instances**. The status goes *Loading* → *Running*. The first 
    ```bash
    cd ~/quadrotor-wind-corridors
    git pull                    # get the newest version of the code
-   nproc                       # how many CPU cores you have
    cd sim
    python3 run_experiments.py --config ../configs/quick.yaml
    ```
 
-   You will see progress lines like `13/12 elapsed 150 s remaining ~0 s`. The quick test takes 3–6 minutes.
+   The first line says how many missions run in parallel (`12 missions on 16 workers`): one per CPU core you
+   rented. Then progress lines follow, e.g. `12/12  elapsed 150 s  remaining ~0 s`. The quick test takes 3–6
+   minutes. (Do not trust `nproc` on Vast.ai: it shows all cores of the host computer, not the ones you rented.)
 
 4. Make the summary and figures:
 

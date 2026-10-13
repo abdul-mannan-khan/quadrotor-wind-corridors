@@ -5,7 +5,7 @@ Usage:
     python run_experiments.py --config ../configs/thesis_full.yaml    # the 1,536-mission campaign of the thesis
     python run_experiments.py --quick                                  # 12-mission smoke test (no config needed)
 
-Options: --workers N (default: all CPU cores), --out FILE (default: ../results/experiments/<name>/campaign.csv),
+Options: --workers N (default: the usable CPU cores), --out FILE (default: ../results/experiments/<name>/campaign.csv),
 --dry-run (only count the missions). The config file lists the values of every swept factor (section `grid`)
 and, optionally, changes to the vehicle, planner, wind model, gusts and city (sections `vehicle`, `planner`,
 `wind`, `gust`, `city`). See configs/README.md.
@@ -38,6 +38,25 @@ PLANNER_KEYS = ("ALTITUDES", "SPEEDS", "TILT_LIMIT", "Z_NOMINAL", "V_NOMINAL", "
 
 _CFG = {}
 _CACHE = {}
+
+
+def available_cpus():
+    """CPU cores this process may really use: cloud containers often see all of the host's cores (os.cpu_count)
+    but are limited by a cgroup quota."""
+    n = len(os.sched_getaffinity(0)) if hasattr(os, "sched_getaffinity") else os.cpu_count()
+    try:
+        q, p = open("/sys/fs/cgroup/cpu.max").read().split()[:2]                 # cgroup v2
+        if q != "max":
+            n = min(n, max(1, int(int(q) / int(p))))
+    except (OSError, ValueError):
+        try:                                                                      # cgroup v1
+            q = int(open("/sys/fs/cgroup/cpu/cpu.cfs_quota_us").read())
+            p = int(open("/sys/fs/cgroup/cpu/cpu.cfs_period_us").read())
+            if q > 0:
+                n = min(n, max(1, q // p))
+        except (OSError, ValueError):
+            pass
+    return n
 
 
 def apply_config(cfg):
@@ -100,7 +119,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--config", help="YAML experiment file (see ../configs)")
     ap.add_argument("--quick", action="store_true", help="12-mission smoke test")
-    ap.add_argument("--workers", type=int, default=os.cpu_count())
+    ap.add_argument("--workers", type=int, default=available_cpus(), help="parallel missions (default: usable CPU cores)")
     ap.add_argument("--out", help="output CSV (default ../results/experiments/<name>/campaign.csv)")
     ap.add_argument("--dry-run", action="store_true", help="only print the number of missions")
     a = ap.parse_args()

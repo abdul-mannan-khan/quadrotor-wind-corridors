@@ -41,7 +41,7 @@ Follow VAST_AI_GUIDE Part A steps 1–8 exactly: rent, run `quick.yaml`, run `su
 
 **Look at:** `summary.csv` and `success_rate.png`.
 
-**Questions.** (a) How many CPU cores did your machine have (`nproc`) and how long did the 12 missions take?
+**Questions.** (a) How many workers did the run use (first line of the output) and how long did the 12 missions take?
 Estimate how long `thesis_full.yaml` (1,536 missions) would take on the same machine. (b) In the quick test
 (12 m/s), which planner delivered every parcel? (c) What did the session cost (Billing page)?
 
