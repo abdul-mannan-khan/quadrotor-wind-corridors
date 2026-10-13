@@ -12,7 +12,7 @@ import os
 import sys
 import time
 
-import airsim
+from airsim_compat import airsim
 import numpy as np
 
 from airsim_replay import DT, KP, Z_OFFSET

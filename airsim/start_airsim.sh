@@ -17,11 +17,14 @@ fi
 mkdir -p /home/airsim/Documents/AirSim
 cp "$SETTINGS" /home/airsim/Documents/AirSim/settings.json
 chown -R airsim: /home/airsim/Documents
-pgrep -f "Xvfb :99" >/dev/null || (Xvfb :99 -screen 0 1920x1080x24 +extension GLX +render -noreset &>/tmp/xvfb.log &)
+if ! pgrep -f "Xvfb :99" >/dev/null; then
+  setsid Xvfb :99 -screen 0 1920x1080x24 +extension GLX +render -noreset >/tmp/xvfb.log 2>&1 </dev/null &
+fi
 sleep 2
 touch /tmp/airsim.log && chmod 666 /tmp/airsim.log
-runuser -u airsim -- env HOME=/home/airsim DISPLAY=:99 bash -c \
-  "cd $(dirname $BIN) && ./$(basename $BIN) -RenderOffScreen -nosound &> /tmp/airsim.log &"
+# detached from this terminal, so that closing it does not stop AirSim
+setsid runuser -u airsim -- env HOME=/home/airsim DISPLAY=:99 bash -c \
+  "cd $(dirname $BIN) && exec ./$(basename $BIN) -RenderOffScreen -nosound" >/tmp/airsim.log 2>&1 </dev/null &
 echo -n "starting AirSim "
 for i in $(seq 1 120); do
   (echo > /dev/tcp/127.0.0.1/41451) 2>/dev/null && { echo; echo "AirSim API is up after ~$((i * 3)) s"; exit 0; }

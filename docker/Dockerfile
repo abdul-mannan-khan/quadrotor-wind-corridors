@@ -25,11 +25,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Python packages (same versions as the dissertation results) + Jupyter for the Vast.ai browser terminal
 COPY requirements.txt /tmp/requirements.txt
-# (airsim's setup.py imports numpy and msgpackrpc, so these are installed first)
-RUN pip3 install --no-cache-dir numpy==2.2.6 msgpack-rpc-python==0.4.1 \
-    && pip3 install --no-cache-dir --no-build-isolation airsim==1.8.1 \
-    && pip3 install --no-cache-dir -r /tmp/requirements.txt jupyterlab \
-    && python3 -c "import airsim, numpy, scipy, matplotlib, pandas, yaml; print('python ok')"
+RUN grep -v -E "^(airsim|msgpack)" /tmp/requirements.txt > /tmp/req_sim.txt \
+    && pip3 install --no-cache-dir -r /tmp/req_sim.txt jupyterlab \
+    && python3 -c "import numpy, scipy, matplotlib, pandas, yaml; print('python ok')"
+# The AirSim client needs tornado 4 (Jupyter needs tornado 6): it lives in its own folder, /opt/airsim_deps,
+# and the AirSim scripts import it through sim/airsim_compat.py. (Its setup.py imports msgpackrpc, hence the order.)
+RUN pip3 install --no-cache-dir --target /opt/airsim_deps tornado==4.5.3 msgpack-python==0.5.6 msgpack-rpc-python==0.4.1 \
+    && PYTHONPATH=/opt/airsim_deps pip3 install --no-cache-dir --no-deps --no-build-isolation --target /opt/airsim_deps airsim==1.8.1 \
+    && PYTHONPATH=/opt/airsim_deps python3 -c "import airsim; print('airsim client ok')"
 
 # Unreal Engine refuses to run as root: AirSim runs as user 'airsim' (uid 1000)
 RUN useradd -m -u 1000 -s /bin/bash airsim && usermod -aG video airsim

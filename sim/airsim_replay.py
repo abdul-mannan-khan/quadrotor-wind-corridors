@@ -11,7 +11,7 @@ import os
 import sys
 import time
 
-import airsim
+from airsim_compat import airsim
 import numpy as np
 
 from city import City

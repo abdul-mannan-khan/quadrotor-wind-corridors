@@ -53,7 +53,9 @@ Left menu → **Instances**. The status goes *Loading* → *Running*. The first 
 ### 5. Open a terminal
 1. On the running instance click **Open** (or **Jupyter**). Jupyter Lab opens in a new browser tab.
    If the browser warns about the certificate, click *Advanced → Proceed*.
-2. In Jupyter: **File → New → Terminal**. You now have a command line on the rented machine.
+2. Open a terminal: in the classic Jupyter page click **New** (top right) → **Terminal**; in Jupyter Lab use
+   **File → New → Terminal**. You now have a command line on the rented machine. (Jupyter's file list starts
+   in the repository folder `quadrotor-wind-corridors`.)
 3. Type (copy–paste works):
 
    ```bash
@@ -74,19 +76,19 @@ Left menu → **Instances**. The status goes *Loading* → *Running*. The first 
    ```
 
 ### 6. Look at the results
-In Jupyter's file browser (left panel) go to `quadrotor-wind-corridors/results/experiments/quick/` and double-click
-`success_rate.png`, `energy_per_parcel.png` or `summary.csv`.
+In Jupyter's file list go to `results/experiments/quick/` and click `success_rate.png`, `energy_per_parcel.png`
+or `summary.csv`.
 
 ### 7. Download the results to your laptop
 Easiest: put the whole experiment folder in one zip file, then download it.
 
 ```bash
-cd ~/quadrotor-wind-corridors/results
-zip -r ~/my_results.zip experiments
+cd ~/quadrotor-wind-corridors
+zip -r my_results.zip results/experiments results/single
 ```
 
-In Jupyter's file browser go to the home folder (click the folder icon at the top of the panel), right-click
-`my_results.zip` → **Download**.
+`my_results.zip` now appears at the top of Jupyter's file list. Tick its box and click **Download** (classic
+page), or right-click it → **Download** (Jupyter Lab).
 
 ### 8. DESTROY the machine
 Back on the Vast.ai **Instances** page click the **trash-can icon** (Destroy) of your instance and confirm.

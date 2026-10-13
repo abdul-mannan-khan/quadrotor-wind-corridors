@@ -163,7 +163,8 @@ python3 airsim_replay.py --one
 cat ../results/airsim/airsim_summary.csv
 stop_airsim
 ```
-Download `results/airsim/` (zip it first) and look at the frames in `frames_U12_th0_wind/`.
+Download the results (`cd ~/quadrotor-wind-corridors && zip -r airsim_results.zip results/airsim`, then download
+`airsim_results.zip` as in VAST_AI_GUIDE step 7) and look at the frames in `frames_U12_th0_wind/`.
 
 **Questions.** (a) Did the mission complete? Compare the RMS and maximum tracking error with the same mission in
 the Python simulator (`fly_one.py --U 12 --theta 0 --planner wind --controller pid`). (b) Name two differences

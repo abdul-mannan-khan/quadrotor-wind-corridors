@@ -2,7 +2,7 @@
 import json
 import os
 
-import airsim
+from airsim_compat import airsim
 import numpy as np
 
 OUT = "../results/airsim/probe"
