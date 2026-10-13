@@ -16,6 +16,9 @@ The flights are checked independently in **AirSim** (Unreal Engine) with the sam
 
 ![AirSim demonstration](docs/img/airsim_frame.jpg)
 
+Demonstration videos (AirSim replay with explanations, and a top-down animation of the Python simulator) are
+attached to the [latest release](https://github.com/abdul-mannan-khan/quadrotor-wind-corridors/releases/latest).
+
 ## What is in the simulator
 
 | File (`sim/`) | What it models |

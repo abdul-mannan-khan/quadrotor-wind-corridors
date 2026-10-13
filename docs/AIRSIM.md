@@ -46,7 +46,7 @@ rotation (deg), the north and east position of the route centre (m from the dron
 between camera frames (s). The map's terrain is roughly 750–800 m across and the houses cover the central ~340 m,
 so a route placed elsewhere flies over empty background.
 
-The finished video is attached to the [GitHub release](../../releases) of this repository.
+The finished video is attached to the [GitHub release](https://github.com/abdul-mannan-khan/quadrotor-wind-corridors/releases) of this repository.
 
 ## 4. Troubleshooting
 | Symptom | Cause and fix |
