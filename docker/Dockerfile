@@ -1,0 +1,40 @@
+# Quadrotor package delivery through urban wind corridors - simulation image.
+#   * Python simulator (6-DOF quadrotor, urban wind model, planners) with all dependencies
+#   * AirSim 1.8.1 "Neighborhood" environment (AirSimNH, Unreal Engine 4, headless) for the AirSim check
+#   * this repository, cloned into /root/quadrotor-wind-corridors
+# Build:  bash docker/build.sh      (see docs/DOCKER.md)
+ARG AIRSIM_ENV_IMAGE=abdulmannan617/sar-airsim:latest
+
+# Stage 1: only the packaged AirSimNH environment is taken from this image (Microsoft AirSim release binary)
+FROM ${AIRSIM_ENV_IMAGE} AS airsim_env
+
+FROM ubuntu:22.04
+ENV DEBIAN_FRONTEND=noninteractive LANG=C.UTF-8 LC_ALL=C.UTF-8 \
+    NVIDIA_VISIBLE_DEVICES=all NVIDIA_DRIVER_CAPABILITIES=all DISPLAY=:99 PYTHONUNBUFFERED=1
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        python3 python3-pip python3-dev build-essential git ca-certificates curl wget nano vim less tmux htop \
+        rsync zip unzip openssh-server ffmpeg fonts-dejavu-core \
+        xvfb libvulkan1 libgl1 libglu1-mesa libegl1 libxrandr2 libxinerama1 libxcursor1 libxi6 libxext6 \
+        libxrender1 libxss1 libasound2 libnss3 libsm6 libice6 libpulse0 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python packages (same versions as the dissertation results) + Jupyter for the Vast.ai browser terminal
+COPY requirements.txt /tmp/requirements.txt
+RUN pip3 install --no-cache-dir numpy==2.2.6 \
+    && pip3 install --no-cache-dir -r /tmp/requirements.txt jupyterlab \
+    && python3 -c "import airsim, numpy, scipy, matplotlib, pandas, yaml; print('python ok')"
+
+# Unreal Engine refuses to run as root: AirSim runs as user 'airsim' (uid 1000)
+RUN useradd -m -u 1000 -s /bin/bash airsim && usermod -aG video airsim
+COPY --from=airsim_env --chown=airsim:airsim /opt/AirSim/AirSimNH /opt/AirSim/AirSimNH
+
+# The repository (public); `git pull` inside the container updates it
+ARG REPO=https://github.com/abdul-mannan-khan/quadrotor-wind-corridors.git
+ARG REF=main
+RUN git clone --branch ${REF} ${REPO} /root/quadrotor-wind-corridors \
+    && ln -s /root/quadrotor-wind-corridors/airsim/start_airsim.sh /usr/local/bin/start_airsim \
+    && ln -s /root/quadrotor-wind-corridors/airsim/stop_airsim.sh /usr/local/bin/stop_airsim \
+    && cp /root/quadrotor-wind-corridors/docker/welcome.sh /etc/profile.d/zz-welcome.sh \
+    && echo '[ -n "$PS1" ] && bash /etc/profile.d/zz-welcome.sh' >> /root/.bashrc
+WORKDIR /root/quadrotor-wind-corridors
+CMD ["bash"]

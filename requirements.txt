@@ -1,0 +1,10 @@
+# Versions used for the dissertation results (Python 3.10)
+numpy==2.2.6
+scipy==1.15.3
+matplotlib==3.10.8
+pandas==2.3.3
+PyYAML==6.0.2
+Pillow==10.4.0
+# AirSim client (only needed for the AirSim part)
+msgpack-rpc-python==0.4.1
+airsim==1.8.1
