@@ -41,7 +41,8 @@ COPY --from=airsim_env --chown=airsim:airsim /opt/AirSim/AirSimNH /opt/AirSim/Ai
 # The repository (public); `git pull` inside the container updates it
 ARG REPO=https://github.com/abdul-mannan-khan/quadrotor-wind-corridors.git
 ARG REF=main
-RUN git clone --branch ${REF} ${REPO} /root/quadrotor-wind-corridors \
+ARG REPO_COMMIT=unknown
+RUN echo "repository at ${REPO_COMMIT}" && git clone --branch ${REF} ${REPO} /root/quadrotor-wind-corridors \
     && ln -s /root/quadrotor-wind-corridors/airsim/start_airsim.sh /usr/local/bin/start_airsim \
     && ln -s /root/quadrotor-wind-corridors/airsim/stop_airsim.sh /usr/local/bin/stop_airsim \
     && cp /root/quadrotor-wind-corridors/docker/welcome.sh /etc/profile.d/zz-welcome.sh \

@@ -31,8 +31,10 @@ Results in `results/airsim/`:
 - `frames_U12_th0_wind/`: chase-camera pictures, one every 2 s of mission time.
 
 The replay runs in lock-step (`simPause` + `simContinueForTime`), so the result does not depend on how fast the
-machine is — in principle. In practice the tracking error differed between machines (RMS 1.2 m on a 32-core RTX
-A4000 host, 2.6 m on a 4-core Quadro RTX 4000 host), so always report the machine with AirSim numbers.
+machine is — in principle. In practice the tracking error differed between machines: the wind-aware mission gave
+RMS 1.2 m / maximum 3.0 m on two different RTX A4000 hosts, but RMS 2.6 m on a 4-core Quadro RTX 4000 host. Always
+report the machine together with AirSim numbers, and use an RTX A4000 (or similar) with 16+ cores to compare with
+the dissertation.
 
 ## 3. The demonstration video
 ```bash

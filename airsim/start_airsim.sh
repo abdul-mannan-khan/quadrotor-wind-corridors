@@ -27,8 +27,9 @@ setsid runuser -u airsim -- env HOME=/home/airsim DISPLAY=:99 bash -c \
   "cd $(dirname $BIN) && exec ./$(basename $BIN) -RenderOffScreen -nosound" >/tmp/airsim.log 2>&1 </dev/null &
 echo -n "starting AirSim "
 for i in $(seq 1 120); do
+  sleep 3; echo -n "."
   (echo > /dev/tcp/127.0.0.1/41451) 2>/dev/null && { echo; echo "AirSim API is up after ~$((i * 3)) s"; exit 0; }
-  pgrep -f AirSimNH >/dev/null || { echo; echo "AirSim stopped. Last lines of /tmp/airsim.log:"; tail -20 /tmp/airsim.log; exit 1; }
-  echo -n "."; sleep 3
+  pgrep -f "Binaries/Linux/AirSimNH" >/dev/null || [ $i -lt 5 ] || \
+    { echo; echo "AirSim stopped. Last lines of /tmp/airsim.log:"; tail -20 /tmp/airsim.log; exit 1; }
 done
 echo; echo "AirSim did not answer within 6 min. See /tmp/airsim.log"; exit 1

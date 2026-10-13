@@ -159,7 +159,7 @@ vastai search offers 'gpu_ram>=8 cpu_cores_effective>=16 reliability>0.98 inet_d
 vastai create instance <ID> --image abdulmannan617/quadrotor-wind-corridors:latest --disk 40 --ssh --direct
 vastai show instances                   # status and ID of your instance
 vastai ssh-url <INSTANCE_ID>            # address to connect to
-vastai destroy instance <INSTANCE_ID>   # ALWAYS at the end
+vastai destroy instance <INSTANCE_ID>   # ALWAYS at the end (answer y)
 ```
 
 ---
