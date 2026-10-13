@@ -50,7 +50,8 @@ python3 summarise.py ../results/experiments/quick/campaign.csv   # table + 2 fig
 python3 fly_one.py --U 16 --theta 0 --planner shortest           # look at one mission
 ```
 
-Without Docker (Linux/macOS, Python 3.10+): `pip install -r requirements.txt`, then the same commands. Small
+Without Docker (Linux/macOS, Python 3.10+): `pip install numpy scipy matplotlib pandas pyyaml` is enough for the
+simulator (exact versions and the AirSim client: see `requirements.txt`), then the same commands. Small
 experiments run on a laptop; use the cloud for anything over ~50 missions.
 
 ## Running your own experiments

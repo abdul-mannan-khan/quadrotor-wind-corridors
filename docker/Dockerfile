@@ -6,7 +6,12 @@
 ARG AIRSIM_ENV_IMAGE=abdulmannan617/sar-airsim:latest
 
 # Stage 1: only the packaged AirSimNH environment is taken from this image (Microsoft AirSim release binary)
-FROM ${AIRSIM_ENV_IMAGE} AS airsim_env
+FROM ${AIRSIM_ENV_IMAGE} AS airsim_src
+FROM ubuntu:22.04 AS airsim_env
+COPY --from=airsim_src /opt/AirSim/AirSimNH /opt/AirSim/AirSimNH
+# debug symbols (2.1 GB) are not needed to run the environment
+RUN rm -f /opt/AirSim/AirSimNH/LinuxNoEditor/AirSimNH/Binaries/Linux/AirSimNH.debug \
+          /opt/AirSim/AirSimNH/LinuxNoEditor/AirSimNH/Binaries/Linux/AirSimNH.sym
 
 FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive LANG=C.UTF-8 LC_ALL=C.UTF-8 \
@@ -20,7 +25,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Python packages (same versions as the dissertation results) + Jupyter for the Vast.ai browser terminal
 COPY requirements.txt /tmp/requirements.txt
-RUN pip3 install --no-cache-dir numpy==2.2.6 \
+# (airsim's setup.py imports numpy and msgpackrpc, so these are installed first)
+RUN pip3 install --no-cache-dir numpy==2.2.6 msgpack-rpc-python==0.4.1 \
+    && pip3 install --no-cache-dir --no-build-isolation airsim==1.8.1 \
     && pip3 install --no-cache-dir -r /tmp/requirements.txt jupyterlab \
     && python3 -c "import airsim, numpy, scipy, matplotlib, pandas, yaml; print('python ok')"
 
