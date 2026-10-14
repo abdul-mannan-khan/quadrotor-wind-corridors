@@ -258,9 +258,8 @@ def main():
                     "AirSim, with its own drone model and flight controller.",
                     "• Question: can an independent vehicle fly the planned route in the urban wind of this "
                     "study?"],
-                   subtitle="Quadrotor Package Delivery through Urban Wind Corridors  ·  MSc dissertation, "
-                            "Adeeba Mansoor",
-                   footer="University of West London  ·  Department of Electronic and Robotic Engineering"), 9)
+                   subtitle="Quadrotor Package Delivery through Urban Wind Corridors",
+                   footer="University of West London  ·  School of Computing and Engineering"), 9)
     show_card(card("What you will see",
                    ["• The mission: depot → customer C1 (parcel drop) → back to the depot, with a 12 m/s wind "
                     "blowing toward the east.",
@@ -282,12 +281,12 @@ def main():
                    [f"• Mission completed: the whole route, out and back, flown in {T_END:.0f} s.",
                     f"• The AirSim drone followed the planned route with an average (RMS) error of {rms:.1f} m and "
                     f"at most {mx:.1f} m.",
-                    "• This demonstration flight was recorded separately from the replay in the dissertation "
+                    "• This demonstration flight was recorded separately from the main AirSim replay "
                     "(RMS error 1.2 m there), with the route moved onto AirSim's terrain and on a different computer.",
                     "• This shows that the urban wind field can be transferred to an independent simulator and "
                     "that the planned route is flyable by a different drone.",
                     "• It does not replace the main study: AirSim's drone is lighter and has less drag, so where "
-                    "its limits lie in strong wind is different (dissertation, Section 5.7)."]), 14)
+                    "its limits lie in strong wind is different."]), 14)
     ff.stdin.close()
     ff.wait()
     print("saved", OUT, f"{len(ts) / FPS:.0f} s of mission footage")
