@@ -20,8 +20,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-PNAME = {"shortest": "Shortest path", "energy0": "Energy (still air)", "wind": "Wind-aware"}
-COLOR = {"shortest": "#2a78d6", "energy0": "#1baf7a", "wind": "#eb6834"}
+PNAME = {"shortest": "Shortest path", "energy0": "Energy (still air)", "wind": "Wind-aware",
+         "cutoff": "Wind cut-off", "egate": "Energy gate", "rienecker": "Min-energy route (fixed z, v)"}
+COLOR = {"shortest": "#2a78d6", "energy0": "#1baf7a", "wind": "#eb6834",
+         "cutoff": "#7d5ba6", "egate": "#8c6d1f", "rienecker": "#d94f8a"}
 DASH = {"pid": "-", "dob": "--"}
 MARK = ["o", "s", "^", "D", "v", "P"]
 

@@ -15,11 +15,16 @@ from scipy.ndimage import gaussian_filter, map_coordinates, maximum_filter
 
 class WindField:
     def __init__(self, city, U_ref=8.0, theta_deg=0.0, z_ref=60.0, alpha=0.30, a_canopy=1.5,
-                 k_corridor=0.3, k_cross=0.25, res=4.0, dz=5.0, z_max=100.0):
+                 k_corridor=0.3, k_cross=0.25, k_shelter=0.5, res=4.0, dz=5.0, z_max=100.0):
         self.city, self.U_ref, self.theta = city, U_ref, np.deg2rad(theta_deg)
         self.res, self.dz = res, dz
+        self.z_ref, self.alpha = z_ref, alpha
         xs, Hb = city.height_map(res)
-        _, cls, width, aven = city.street_class(res)
+        general = hasattr(city, "street_axis")              # real city: streets in any direction
+        if general:
+            _, canyon, axis, width, aven = city.street_axis(res)
+        else:
+            _, cls, width, aven = city.street_class(res)
         n = len(xs)
         zs = np.arange(0.0, z_max + dz, dz)
         self.xs, self.zs = xs, zs
@@ -36,11 +41,17 @@ class WindField:
             u_c = np.where(zz >= H_loc, u_fs, u_fs * np.exp(a_canopy * (zz / H_loc - 1.0)))
             vx, vy = u_c * d[0], u_c * d[1]
             # channelled flow inside the canyons (below the wall height)
-            ch_x = cls == 1
-            ch_y = cls == 2
             gain = 1.0 + k_corridor * aven
-            cvx = np.where(ch_x, u_c * d[0] * gain, np.where(ch_y, u_c * d[0] * k_cross, vx))
-            cvy = np.where(ch_y, u_c * d[1] * gain, np.where(ch_x, u_c * d[1] * k_cross, vy))
+            if general:
+                # along-street component amplified on avenues, cross-street component suppressed
+                along = d[0] * axis[..., 0] + d[1] * axis[..., 1]
+                cvx = np.where(canyon, u_c * (along * gain * axis[..., 0] + k_cross * (d[0] - along * axis[..., 0])), vx)
+                cvy = np.where(canyon, u_c * (along * gain * axis[..., 1] + k_cross * (d[1] - along * axis[..., 1])), vy)
+            else:
+                ch_x = cls == 1
+                ch_y = cls == 2
+                cvx = np.where(ch_x, u_c * d[0] * gain, np.where(ch_y, u_c * d[0] * k_cross, vx))
+                cvy = np.where(ch_y, u_c * d[1] * gain, np.where(ch_x, u_c * d[1] * k_cross, vy))
             w = 1.0 / (1.0 + np.exp(-(zz - H_can) / 4.0))     # 0 deep in canyon, 1 above roofs
             vx = w * vx + (1 - w) * cvx
             vy = w * vy + (1 - w) * cvy
@@ -52,8 +63,8 @@ class WindField:
                                            np.arange(n)[None, :] + shift[1] + 0 * np.arange(n)[:, None]],
                                       order=0, mode="nearest")
                 S = np.maximum(S, (Hup > zz) * np.exp(-s / (0.8 * np.maximum(Hup, 1.0))))
-            vx *= 1.0 - 0.5 * S
-            vy *= 1.0 - 0.5 * S
+            vx *= 1.0 - k_shelter * S
+            vy *= 1.0 - k_shelter * S
             ti = np.where(zz >= H_can, 0.12, 0.22) + 0.25 * S
             solid = Hb > zz
             vx[solid] = vy[solid] = 0.0

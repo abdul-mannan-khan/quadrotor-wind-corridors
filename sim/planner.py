@@ -1,5 +1,9 @@
 """Grid A* route planning at a fixed cruise altitude (shortest vs. wind-aware energy cost),
-path shortcutting, corner rounding and a curvature/acceleration-limited speed profile."""
+path shortcutting, corner rounding and a curvature/acceleration-limited speed profile.
+
+With `speeds` (a tuple of ground speeds) the planner also chooses the cruise speed: the cost of a cell is the
+lowest energy per metre over the speeds that respect the tilt limit there, and each straight segment of the final
+path is flown at the speed that minimises its energy in the local wind (e.g. faster with a tailwind)."""
 import heapq
 import numpy as np
 from scipy.ndimage import binary_dilation, uniform_filter1d
@@ -11,8 +15,9 @@ DIRS = [(1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1), (1, -1)]
 
 class Planner:
     def __init__(self, city, wind, z_cruise=30.0, v_cruise=8.0, res=4.0, clear_h=8.0,
-                 clear_v=8.0, mass=None, lam_turb=0.0, P=None, tilt_limit=30.0):
+                 clear_v=8.0, mass=None, lam_turb=0.0, P=None, tilt_limit=30.0, speeds=None):
         self.city, self.wind, self.z, self.v, self.res = city, wind, z_cruise, v_cruise, res
+        self.speeds = tuple(float(v) for v in speeds) if speeds else None
         self.P = P or Params()
         self.mass = mass if mass is not None else self.P.m_frame + self.P.m_payload
         xs, H = city.height_map(res)
@@ -31,20 +36,25 @@ class Planner:
         self._cost_tables()
 
     def _cost_tables(self):
-        """Energy per metre (J/m) for each cell and each of the 8 headings, from the mean wind."""
+        """Energy per metre (J/m) for each cell and each of the 8 headings, from the mean wind. With several
+        speeds, Ek[k] is the table at speed k and Epm the cell-wise minimum over the speeds."""
         U, TI = self.wind.layer(self.z)
         n = len(self.xs)
-        self.Epm = np.zeros((n, n, 8))
-        # power depends on (heading, wind vector): tabulate on a coarse wind grid, then look up
-        for d, (dx, dy) in enumerate(DIRS):
-            t = np.array([dx, dy, 0.0]) / np.hypot(dx, dy)
-            # quantise wind to 0.25 m/s to share computations
-            key = np.round(U[:, :, :2] / 0.25).astype(int).reshape(-1, 2)
-            uniq, inv = np.unique(key, axis=0, return_inverse=True)
-            PT = np.array([trim_power(self.v * t, np.array([k[0] * 0.25, k[1] * 0.25, 0.0]), self.mass, self.P,
-                                      return_tilt=True) for k in uniq])
-            Pq = np.where(PT[:, 1] > self.tilt_limit, np.inf, PT[:, 0])   # infeasible: needs too much tilt
-            self.Epm[:, :, d] = (Pq[inv] / self.v).reshape(n, n)
+        vs = self.speeds or (self.v,)
+        self.Ek = np.zeros((len(vs), n, n, 8))
+        # quantise wind to 0.25 m/s to share computations
+        key = np.round(U[:, :, :2] / 0.25).astype(int).reshape(-1, 2)
+        uniq, inv = np.unique(key, axis=0, return_inverse=True)
+        inv = inv.ravel()
+        # power depends on (velocity, wind vector): tabulate on the quantised winds, then look up
+        for kv, v in enumerate(vs):
+            for d, (dx, dy) in enumerate(DIRS):
+                t = np.array([dx, dy, 0.0]) / np.hypot(dx, dy)
+                PT = np.array([trim_power(v * t, np.array([k[0] * 0.25, k[1] * 0.25, 0.0]), self.mass, self.P,
+                                          return_tilt=True) for k in uniq])
+                Pq = np.where(PT[:, 1] > self.tilt_limit, np.inf, PT[:, 0])   # infeasible: needs too much tilt
+                self.Ek[kv, :, :, d] = (Pq[inv] / v).reshape(n, n)
+        self.Epm = self.Ek.min(axis=0)
         gust = TI * np.linalg.norm(U, axis=2)               # turbulence std (m/s)
         self.turb = gust
         fin = self.Epm[~self.occ]
@@ -98,27 +108,55 @@ class Planner:
         return pts
 
     # -- cost of an arbitrary polyline (used for shortcutting and for reporting) -------------
-    def line_cost(self, a, b, mode, step=1.0):
-        """Cost of a straight segment a->b and whether it is collision-free. The energy per metre
-        for an arbitrary heading is interpolated between the two neighbouring tabulated headings."""
+    def _seg_costs(self, a, b, step=1.0):
+        """Energy of the straight segment a->b at each tabulated speed (array over speeds), its length and
+        whether it is collision-free. The energy per metre for an arbitrary heading is interpolated between the
+        two neighbouring tabulated headings."""
         L = np.linalg.norm(b - a)
         if L < 1e-9:
-            return 0.0, True
+            return np.zeros(len(self.Ek)), 0.0, True
         k = max(int(L / step), 1)
         pts = a + (b - a) * (np.arange(k) + 0.5)[:, None] / k
         idx = np.clip((pts / self.res).astype(int), 0, len(self.xs) - 1)
         free = not self.occ_tight[idx[:, 0], idx[:, 1]].any()
-        if mode == "shortest" or not free:
-            return L, free
         ang = np.arctan2(b[1] - a[1], b[0] - a[0]) % (2 * np.pi)
         fd = ang / (np.pi / 4)
         d0 = int(fd) % 8
         d1, w1 = (d0 + 1) % 8, fd - int(fd)
-        e = self.Epm[idx[:, 0], idx[:, 1], d0]
+        e = self.Ek[:, idx[:, 0], idx[:, 1], d0]
         if w1 > 1e-9:
-            e = (1 - w1) * e + w1 * self.Epm[idx[:, 0], idx[:, 1], d1]
+            e = (1 - w1) * e + w1 * self.Ek[:, idx[:, 0], idx[:, 1], d1]
         e = e + self.lam * self.turb[idx[:, 0], idx[:, 1]]
-        return float(e.sum() * L / k), free
+        return e.sum(axis=1) * L / k, L, free
+
+    def line_cost(self, a, b, mode, step=1.0):
+        """Cost of a straight segment a->b (flown at its best speed) and whether it is collision-free."""
+        c, L, free = self._seg_costs(a, b, step)
+        if mode == "shortest" or not free or L < 1e-9:
+            return L, free
+        return float(c.min()), free
+
+    def seg_speeds(self, pts):
+        """Ground speed for each segment of the path: the tabulated speed with the lowest segment energy."""
+        vs = self.speeds or (self.v,)
+        out = []
+        for k in range(len(pts) - 1):
+            c = self._seg_costs(pts[k], pts[k + 1])[0]
+            out.append(vs[int(np.argmin(c))] if np.isfinite(c).any() else min(vs))
+        return np.array(out)
+
+    def path_energy_at(self, pts, speeds):
+        """Predicted energy of the path flown at the given per-segment ground speeds (used to score a plan made
+        by another planner, e.g. a still-air plan, in this planner's wind)."""
+        vs = list(self.speeds or (self.v,))
+        lam, self.lam = self.lam, 0.0
+        e = 0.0
+        for k in range(len(pts) - 1):
+            v = float(speeds[k])
+            kv = int(np.argmin([abs(v - x) for x in vs]))
+            e += self._seg_costs(pts[k], pts[k + 1])[0][kv]
+        self.lam = lam
+        return e
 
     def shortcut(self, pts, mode):
         seg = np.array([self.line_cost(pts[k], pts[k + 1], mode)[0] for k in range(len(pts) - 1)])
@@ -130,7 +168,8 @@ class Planner:
             # farthest point reachable by a straight, free and not-more-expensive segment
             for j in range(len(pts) - 1, i + 1, -1):
                 c_line, free = self.line_cost(pts[i], pts[j], mode)
-                if free and (mode == "shortest" or c_line <= cum[j] - cum[i]):
+                tol = 1.0 if self.speeds is None else 1.02    # a long segment has one speed: allow 2 %
+                if free and (mode == "shortest" or c_line <= tol * (cum[j] - cum[i])):
                     j_best = j
                     break
             out.append(pts[j_best])
@@ -152,6 +191,7 @@ class Planner:
 # --------------------------------------------------------------------------------------------
 def time_parametrise(poly3, v_max, a_max=2.0, a_lat=2.5, ds=0.5, round_m=10.0, occ_check=None):
     """Turn a 3-D polyline into a time-indexed reference (t, p, v, a) with rounded corners.
+    v_max is one speed or one speed per polyline segment.
     occ_check(p_xy) -> bool returns True if a smoothed point is in collision."""
     seg = np.diff(poly3, axis=0)
     L = np.linalg.norm(seg, axis=1)
@@ -159,6 +199,8 @@ def time_parametrise(poly3, v_max, a_max=2.0, a_lat=2.5, ds=0.5, round_m=10.0, o
     s = np.arange(0, s_nodes[-1] + 1e-9, ds)
     if s[-1] < s_nodes[-1]:
         s = np.append(s, s_nodes[-1])
+    v_seg = np.broadcast_to(np.asarray(v_max, float), (len(L),))
+    vt = v_seg[np.clip(np.searchsorted(s_nodes, s, side="right") - 1, 0, len(L) - 1)]
     P = np.column_stack([np.interp(s, s_nodes, poly3[:, k]) for k in range(3)])
     w = int(round_m / ds) | 1
     while w > 1:
@@ -174,13 +216,14 @@ def time_parametrise(poly3, v_max, a_max=2.0, a_lat=2.5, ds=0.5, round_m=10.0, o
     dl = np.linalg.norm(d, axis=1)
     keep = np.concatenate([[True], dl > 1e-6])
     P = P[keep]
+    vt = vt[keep]
     d = np.diff(P, axis=0)
     dl = np.linalg.norm(d, axis=1)
     s = np.concatenate([[0], np.cumsum(dl)])
     T = np.gradient(P, s, axis=0)
     T /= np.linalg.norm(T, axis=1, keepdims=True) + 1e-12
     kappa = np.linalg.norm(np.gradient(T, s, axis=0), axis=1)
-    vlim = np.minimum(v_max, np.sqrt(a_lat / np.maximum(kappa, 1e-6)))
+    vlim = np.minimum(vt, np.sqrt(a_lat / np.maximum(kappa, 1e-6)))
     vlim[0] = vlim[-1] = 0.0
     v = vlim.copy()
     for i in range(1, len(v)):

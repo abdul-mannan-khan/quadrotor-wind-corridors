@@ -40,6 +40,7 @@ wind:                            # sim/wind.py, class WindField
   alpha: 0.30                    # power-law exponent above the roofs (0.30 = city centre)
   a_canopy: 1.5                  # how fast the wind decays below roof height
   k_corridor: 0.3                # extra speed-up along wide avenues (wind corridors)
+  k_shelter: 0.5                 # strength of the wind sheltering behind taller upwind buildings (0 = none)
   k_cross: 0.25                  # fraction of the cross-street wind that survives in a street canyon
 
 gust:                            # sim/wind.py, class DrydenGust

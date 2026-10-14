@@ -19,7 +19,7 @@ import numpy as np
 
 import mission
 from city import City
-from run_experiments import apply_config, load_config, make_params
+from run_experiments import apply_config, load_config, make_city, make_params
 from wind import WindField
 
 
@@ -28,7 +28,7 @@ def main():
     ap.add_argument("--U", type=float, default=12.0, help="reference wind speed at 60 m (m/s)")
     ap.add_argument("--theta", type=float, default=180.0, help="direction the wind blows TOWARD (deg, 0 = east)")
     ap.add_argument("--customer", type=int, default=0)
-    ap.add_argument("--planner", default="wind", choices=["shortest", "energy0", "wind"])
+    ap.add_argument("--planner", default="wind", choices=["shortest", "energy0", "wind", "cutoff", "egate", "rienecker"])
     ap.add_argument("--controller", default="dob", choices=["pid", "dob"])
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--config", help="optional YAML file with vehicle/planner/wind/gust/city changes")
@@ -37,7 +37,7 @@ def main():
     cfg = load_config(a.config) if a.config else {}
     apply_config(cfg)
     P = make_params()
-    city = City(**(cfg.get("city") or {}))
+    city = make_city(cfg.get("city"))
     wind = WindField(city, a.U, a.theta, **(cfg.get("wind") or {}))
     t0 = time.time()
     r = mission.run_mission(a.U, a.theta, a.customer, a.planner, a.controller, a.seed, keep_log=True,

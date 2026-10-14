@@ -34,7 +34,7 @@ DEFAULT_GRID = dict(U_ref=[4.0, 8.0, 12.0, 16.0], theta=[0.0, 45.0, 90.0, 135.0,
 QUICK_GRID = dict(U_ref=[12.0], theta=[0.0, 180.0], customer=[0], planner=["shortest", "energy0", "wind"],
                   controller=["pid", "dob"], seed=[0])
 PLANNER_KEYS = ("ALTITUDES", "SPEEDS", "TILT_LIMIT", "Z_NOMINAL", "V_NOMINAL", "Z_DROP", "V_CLIMB", "V_DESCEND",
-                "K_OBS", "CUSTOMERS", "DEPOT")
+                "K_OBS", "CUSTOMERS", "DEPOT", "WIND_CUTOFF", "CLEAR_H", "SPEED_SCHEDULE", "SPEEDS_FINE")
 
 _CFG = {}
 _CACHE = {}
@@ -70,11 +70,29 @@ def apply_config(cfg):
             v = [np.array(c, float) for c in v]
         elif k == "DEPOT":
             v = np.array(v, float)
+        elif isinstance(v, bool):
+            pass
         elif isinstance(v, list):
             v = tuple(float(x) for x in v)
         setattr(mission, k, v)
     mission.GUST = dict(cfg.get("gust") or {})
     _CACHE.clear()
+
+
+def make_city(spec):
+    """Procedural city (City kwargs) or a real city from OpenStreetMap (`osm: path/to/city.npz`). A real city
+    brings its own depot and customers unless the config sets planner DEPOT / CUSTOMERS."""
+    spec = dict(spec or {})
+    if "osm" not in spec:
+        return City(**spec)
+    from osm_city import OSMCity
+    city = OSMCity(**spec)
+    pl = _CFG.get("planner") or {}
+    if "DEPOT" not in pl:
+        mission.DEPOT = city.depot
+    if "CUSTOMERS" not in pl:
+        mission.CUSTOMERS = list(city.customers)
+    return city
 
 
 def make_params():
@@ -89,7 +107,7 @@ def make_params():
 def job(args):
     U, th, cust, planner, ctrl, seed = args
     if "city" not in _CACHE:
-        _CACHE["city"] = City(**(_CFG.get("city") or {}))
+        _CACHE["city"] = make_city(_CFG.get("city"))
         _CACHE["P"] = make_params()
     city = _CACHE["city"]
     key = (U, th)
@@ -97,8 +115,17 @@ def job(args):
         for k in [k for k in _CACHE if isinstance(k, tuple)]:
             del _CACHE[k]                    # keep one wind field per worker in memory
         _CACHE[key] = WindField(city, U, th, **(_CFG.get("wind") or {}))
+        q = _CFG.get("qes")
+        if q:   # QES-Winds mean field (same turbulence model); the vehicle flies in it
+            from qes_wind import QESWindField
+            _CACHE[("qes",) + key] = QESWindField(city, U, th, q["dir"], **(_CFG.get("wind") or {}))
+    fly = plan = _CACHE[key]
+    q = _CFG.get("qes")
+    if q:
+        fly = _CACHE[("qes",) + key] if q.get("fly", "qes") == "qes" else _CACHE[key]
+        plan = _CACHE[("qes",) + key] if q.get("plan", "analytic") == "qes" else _CACHE[key]
     try:
-        r = run_mission(U, th, cust, planner, ctrl, seed, city=city, wind=_CACHE[key], P=_CACHE["P"])
+        r = run_mission(U, th, cust, planner, ctrl, seed, city=city, wind=fly, P=_CACHE["P"], plan_wind=plan)
     except Exception as e:  # keep the campaign going; record the failure
         r = dict(U_ref=U, theta=th, customer=cust, planner=planner, controller=ctrl, seed=seed,
                  success=False, error=repr(e))
@@ -108,7 +135,7 @@ def job(args):
 def load_config(path):
     with open(path) as f:
         cfg = yaml.safe_load(f) or {}
-    unknown = set(cfg) - {"name", "description", "grid", "vehicle", "planner", "wind", "gust", "city"}
+    unknown = set(cfg) - {"name", "description", "grid", "vehicle", "planner", "wind", "gust", "city", "qes"}
     if unknown:
         raise KeyError(f"unknown section(s) in {path}: {sorted(unknown)}")
     cfg.setdefault("name", os.path.splitext(os.path.basename(path))[0])
