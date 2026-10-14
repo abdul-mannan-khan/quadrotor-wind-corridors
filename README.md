@@ -1,6 +1,6 @@
 # Quadrotor Package Delivery through Urban Wind Corridors
 
-Simulation code for the M.Sc. project *Quadrotor Package Delivery through Urban Wind Corridors* (Adeeba Mansoor,
+Simulation code for urban quadrotor parcel delivery in wind (Abdul Manan Khan, School of Computing and Engineering,
 University of West London). A delivery quadrotor flies from a depot to a customer, lowers and releases a parcel,
 and returns, through a city whose streets and wide avenues channel the wind. Three route planners are compared
 under winds of 4–16 m/s from eight directions:
@@ -23,13 +23,13 @@ The flights are checked independently in **AirSim** (Unreal Engine) with the sam
 Demonstration videos (AirSim replay with explanations, and a top-down animation of the Python simulator) are
 attached to the [latest release](https://github.com/abdul-mannan-khan/quadrotor-wind-corridors/releases/latest).
 
-## Version 2 (journal extension)
+## Version 2 (journal paper)
 
-Version 2 extends the dissertation code for the journal paper:
+Version 2 extends the original (version 1) code for the journal paper:
 
 - **Speed per street segment.** The energy planners (`energy0`, `wind`) choose the ground speed of every straight
   segment from 4–18 m/s (`SPEED_SCHEDULE`, `SPEEDS_FINE` in `sim/mission.py`), so the wind-aware planner flies
-  faster with a tailwind and slower into a headwind. Set `SPEED_SCHEDULE: false` for the dissertation behaviour
+  faster with a tailwind and slower into a headwind. Set `SPEED_SCHEDULE: false` for the version 1 behaviour
   (one speed per leg from 6–12 m/s); `shortest`, `cutoff`, `egate` and `rienecker` are unchanged.
 - **Real cities.** `sim/osm_city.py` rasterises OpenStreetMap buildings and estimates street axes and widths, so the
   wind model channels the flow along real streets. City of London and Midtown Manhattan are in `data/cities/`.
@@ -55,7 +55,7 @@ Version 2 extends the dissertation code for the journal paper:
 | `summarise.py` | table + figures for one or several experiments |
 | `fly_one.py` | flies one mission and plots its route, error, wind and energy |
 | `airsim_replay.py`, `airsim_demo_record.py`, `airsim_demo_video.py` | AirSim check and demonstration video |
-| `analyze.py`, `make_logs.py`, `figs_v2.py`, `demo_animation.py` | figures and tables of the dissertation |
+| `analyze.py`, `make_logs.py`, `figs_v2.py`, `demo_animation.py` | figures and tables of the version 1 campaign |
 
 ## Quick start
 
@@ -132,12 +132,12 @@ hil/          PX4 hardware-in-the-loop bridge
 airsim/       AirSim settings and start/stop scripts
 docker/       Dockerfile and build script of the image
 docs/         guides (Vast.ai, experiments, AirSim, Docker, learning tasks)
-results/      results of the dissertation campaign (campaign.csv, paired comparisons, AirSim summary);
+results/      results of the version 1 campaign (campaign.csv, paired comparisons, AirSim summary);
               your experiments go to results/experiments/<name>/
 outputs/      figures and tables made by analyze.py (created when you run it)
 ```
 
-## Reproducing the dissertation results
+## Reproducing the version 1 results
 
 ```bash
 cd sim
