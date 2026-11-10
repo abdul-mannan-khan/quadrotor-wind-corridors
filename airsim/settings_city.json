@@ -8,15 +8,42 @@
     "Drone0": {
       "VehicleType": "SimpleFlight",
       "AutoCreate": true,
-      "X": 0, "Y": 0, "Z": 0, "Yaw": 0,
+      "X": 0,
+      "Y": 0,
+      "Z": 0,
+      "Yaw": 0,
       "Cameras": {
         "chase": {
-          "CaptureSettings": [{"ImageType": 0, "Width": 1280, "Height": 720, "FOV_Degrees": 90}],
-          "X": -9.0, "Y": 0.0, "Z": -4.0, "Pitch": -25.0, "Roll": 0.0, "Yaw": 0.0
+          "CaptureSettings": [
+            {
+              "ImageType": 0,
+              "Width": 1280,
+              "Height": 720,
+              "FOV_Degrees": 90
+            }
+          ],
+          "X": -30.0,
+          "Y": 0.0,
+          "Z": -20.0,
+          "Pitch": -50.0,
+          "Roll": 0.0,
+          "Yaw": 0.0
         },
         "down": {
-          "CaptureSettings": [{"ImageType": 0, "Width": 1024, "Height": 1024, "FOV_Degrees": 90}],
-          "X": 0.0, "Y": 0.0, "Z": 0.5, "Pitch": -90.0, "Roll": 0.0, "Yaw": 0.0
+          "CaptureSettings": [
+            {
+              "ImageType": 0,
+              "Width": 1024,
+              "Height": 1024,
+              "FOV_Degrees": 90
+            }
+          ],
+          "X": 0.0,
+          "Y": 0.0,
+          "Z": 0.5,
+          "Pitch": -90.0,
+          "Roll": 0.0,
+          "Yaw": 0.0
         }
       }
     }
