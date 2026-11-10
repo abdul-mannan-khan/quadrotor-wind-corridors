@@ -1,0 +1,37 @@
+# Quadrotor package delivery through urban wind corridors - CITY image.
+#   * AirSim 1.8.1 "CityEnviron" (official Windows build) running headless on Linux under Wine 11 + DXVK 3.1.1,
+#     taken unchanged from the tested image abdulmannan617/airsim-city-wine (pinned by digest below)
+#   * the Python simulator of this repository with its dependencies (same versions as the dissertation)
+#   * Jupyter Lab for the Vast.ai browser terminal, in its own environment
+# The Neighborhood image (Dockerfile, tag :latest) is unchanged; this image has its own tag, :city-wine.
+# Build: bash docker/build_city.sh   (see docs/CITY_WINE.md)
+ARG BASE=abdulmannan617/airsim-city-wine:1.8.1-wine11-dxvk3.1.1@sha256:8ad0d8cec214974a8b8150efe610fdddb43c227f71beb46e38613a723ebb482f
+FROM ${BASE}
+
+ENV PYTHONUNBUFFERED=1 AIRSIM_Z_OFFSET=220
+RUN apt-get update -qq && apt-get install -y -qq --no-install-recommends ffmpeg fonts-dejavu-core \
+    && rm -rf /var/lib/apt/lists/*
+
+# Simulator packages. The AirSim client is already installed in the base image (with the old tornado it needs).
+COPY requirements.txt /tmp/requirements.txt
+RUN grep -v -E "^(airsim|msgpack)" /tmp/requirements.txt > /tmp/req_sim.txt \
+    && pip3 install --no-cache-dir -r /tmp/req_sim.txt \
+    && python3 -c "import numpy, scipy, matplotlib, pandas, yaml, airsim; print('python ok')"
+
+# Jupyter Lab in its own virtual environment: it needs tornado 6, the AirSim client needs tornado 4
+RUN python3 -m venv /opt/jupyter && /opt/jupyter/bin/pip install --no-cache-dir -q jupyterlab \
+    && ln -s /opt/jupyter/bin/jupyter /usr/local/bin/jupyter \
+    && ln -s /opt/jupyter/bin/jupyter-lab /usr/local/bin/jupyter-lab \
+    && python3 -c "import airsim, tornado; assert tornado.version_info[0] == 4, tornado.version; print('airsim client ok')"
+
+# The repository (public); `git pull` inside the container updates it
+ARG REPO=https://github.com/abdul-mannan-khan/quadrotor-wind-corridors.git
+ARG REF=main
+ARG REPO_COMMIT=unknown
+RUN echo "repository at ${REPO_COMMIT}" && git clone --branch ${REF} ${REPO} /root/quadrotor-wind-corridors \
+    && ln -s /root/quadrotor-wind-corridors/airsim/start_city.sh /usr/local/bin/start_city \
+    && ln -s /root/quadrotor-wind-corridors/airsim/stop_city.sh /usr/local/bin/stop_city \
+    && cp /root/quadrotor-wind-corridors/docker/welcome_city.sh /etc/profile.d/zz-welcome.sh \
+    && echo '[ -n "$PS1" ] && bash /etc/profile.d/zz-welcome.sh' >> /root/.bashrc
+WORKDIR /root/quadrotor-wind-corridors
+CMD ["bash"]

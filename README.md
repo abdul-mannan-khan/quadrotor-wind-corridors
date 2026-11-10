@@ -94,19 +94,40 @@ stop_airsim
 
 Details, the demonstration video and how it is made: [docs/AIRSIM.md](docs/AIRSIM.md).
 
+### The city map (Windows build, under Wine)
+
+AirSim's **CityEnviron** map (tall buildings, streets) exists only as a Windows build. The **city image**
+`abdulmannan617/quadrotor-wind-corridors:city-wine` runs it on a normal Linux GPU machine on Vast.ai through Wine,
+so no Windows computer or Windows cloud VM is needed:
+
+```bash
+start_city                         # starts CityEnviron off-screen (GPU with NVIDIA driver 595+)
+cd ~/quadrotor-wind-corridors/sim
+python3 airsim_replay.py --one     # same mission, flown above the city towers
+stop_city
+```
+
+How to rent the right machine, check it and troubleshoot: **[docs/CITY_WINE.md](docs/CITY_WINE.md)**.
+
 ## Learning path
 
 New to the code? Work through **[docs/LEARNING_TASKS.md](docs/LEARNING_TASKS.md)**: seven short tasks, from the
 first run to designing and reporting your own experiment.
+
+## Working with an AI assistant
+
+Ready-to-use prompts for literature searches in IEEE Xplore and Scopus, for planning and running simulations on
+Vast.ai, for reading results and for checking your writing, with the rules for using them safely:
+**[docs/AI_PROMPTS.md](docs/AI_PROMPTS.md)**.
 
 ## Repository layout
 
 ```
 configs/      experiment files (YAML)
 sim/          simulator, experiment runner, analysis, AirSim scripts
-airsim/       AirSim settings and start/stop scripts
-docker/       Dockerfile and build script of the image
-docs/         guides (Vast.ai, experiments, AirSim, Docker, learning tasks)
+airsim/       AirSim settings and start/stop scripts (Neighborhood and city)
+docker/       Dockerfiles and build scripts of the main image and the city image
+docs/         guides (Vast.ai, experiments, AirSim, city map under Wine, Docker, learning tasks, AI prompts)
 results/      results of the dissertation campaign (campaign.csv, paired comparisons, AirSim summary);
               your experiments go to results/experiments/<name>/
 outputs/      figures and tables made by analyze.py (created when you run it)

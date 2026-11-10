@@ -4,7 +4,7 @@ urban wind field is injected at the vehicle position every step through simSetWi
 Frames: thesis world (x east, y north, z up), AirSim NED (x north, y east, z down) relative to the
 vehicle start. The mission is shifted up by Z_OFFSET so that the AirSim map geometry (which is not
 our procedural city) does not interfere; the wind is still evaluated at the thesis coordinates.
-Usage (inside the container, after `start_airsim`):  python3 airsim_replay.py [--one]
+Usage (inside the container, after `start_airsim`, or `start_city` in the city image):  python3 airsim_replay.py [--one]
 """
 import csv
 import os
@@ -20,7 +20,8 @@ from quadrotor import Params, quat_to_R, rotor_power
 from wind import DrydenGust, WindField
 
 DT = 0.05           # s, control / wind update period (sim time, lock-stepped)
-Z_OFFSET = 40.0     # m, keep clear of the AirSim map geometry
+Z_OFFSET = float(os.environ.get("AIRSIM_Z_OFFSET", "40"))   # m above the AirSim start point, clear of the map
+# geometry: 40 m over the Neighborhood map; the city image sets AIRSIM_Z_OFFSET=220 (city towers, docs/CITY_WINE.md)
 KP = 1.2            # outer-loop position gain -> velocity command
 OUT = "../results/airsim"
 

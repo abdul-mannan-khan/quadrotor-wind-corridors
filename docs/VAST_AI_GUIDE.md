@@ -164,6 +164,14 @@ vastai destroy instance <INSTANCE_ID>   # ALWAYS at the end (answer y)
 
 ---
 
+## Part D — the AirSim city map (Windows build under Wine)
+
+To fly in AirSim's **CityEnviron** city map, use the **city image** instead of the main image. Make a second
+template with image `abdulmannan617/quadrotor-wind-corridors:city-wine`, Docker options
+`-e NVIDIA_DRIVER_CAPABILITIES=all -e NVIDIA_VISIBLE_DEVICES=all` and 60 GB disk, and rent a GPU machine with
+**NVIDIA driver 595 or newer**. Everything else in this guide stays the same (terminal, download, **destroy**).
+Full steps: [CITY_WINE.md](CITY_WINE.md). No Windows machine or Windows cloud VM is needed.
+
 ## Choosing a machine for the job
 
 | Job | Missions | Suggested machine | Time |

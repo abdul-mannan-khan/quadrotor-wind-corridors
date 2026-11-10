@@ -173,6 +173,10 @@ even though its map does not contain our city?
 
 **Hand in:** the summary row, three frames and your answers. See [AIRSIM.md](AIRSIM.md) if something fails.
 
+**Optional: the same in the city.** Rent a machine with the city image (driver 595+, see [CITY_WINE.md](CITY_WINE.md)),
+then `start_city`, `python3 airsim_replay.py --one`, `stop_city`. Compare the summary row with the Neighborhood run:
+the mission, the wind and the controller are the same; only the scenery and the machine change.
+
 ---
 
 ## Task 8 — Your own experiment

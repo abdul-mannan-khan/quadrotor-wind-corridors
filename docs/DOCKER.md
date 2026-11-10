@@ -13,6 +13,14 @@
 
 Size: about 4 GB to download, 8 GB on disk.
 
+## The city image
+
+A second image, **`abdulmannan617/quadrotor-wind-corridors:city-wine`**, has the same simulator and repository but
+AirSim's **CityEnviron** map (Windows build) running under Wine + DXVK instead of the Neighborhood map. Start and
+stop it with `start_city` / `stop_city`; it needs an NVIDIA GPU with driver 595 or newer and
+`-e NVIDIA_DRIVER_CAPABILITIES=all`. Built from `docker/Dockerfile.city` with `bash docker/build_city.sh`; it never
+changes `:latest`. Guide: [CITY_WINE.md](CITY_WINE.md).
+
 ## Use on Vast.ai
 See [VAST_AI_GUIDE.md](VAST_AI_GUIDE.md). Image path: `abdulmannan617/quadrotor-wind-corridors:latest`.
 
