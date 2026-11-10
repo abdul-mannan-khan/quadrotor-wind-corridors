@@ -9,7 +9,9 @@ ARG BASE=abdulmannan617/airsim-city-wine:1.8.1-wine11-dxvk3.1.1@sha256:8ad0d8cec
 FROM ${BASE}
 
 ENV PYTHONUNBUFFERED=1 AIRSIM_Z_OFFSET=220
-RUN apt-get update -qq && apt-get install -y -qq --no-install-recommends ffmpeg fonts-dejavu-core \
+# The NVIDIA CUDA package source of the base image is not needed here (its mirror is sometimes mid-sync): skip it
+RUN rm -f /etc/apt/sources.list.d/cuda*.list /etc/apt/sources.list.d/nvidia*.list \
+    && apt-get update -qq && apt-get install -y -qq --no-install-recommends ffmpeg fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/*
 
 # Simulator packages. The AirSim client is already installed in the base image (with the old tornado it needs).
