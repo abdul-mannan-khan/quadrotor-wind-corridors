@@ -35,5 +35,7 @@ RUN echo "repository at ${REPO_COMMIT}" && git clone --branch ${REF} ${REPO} /ro
     && ln -s /root/quadrotor-wind-corridors/airsim/stop_city.sh /usr/local/bin/stop_city \
     && cp /root/quadrotor-wind-corridors/docker/welcome_city.sh /etc/profile.d/zz-welcome.sh \
     && echo '[ -n "$PS1" ] && bash /etc/profile.d/zz-welcome.sh' >> /root/.bashrc
+# SSH host keys: the base image has openssh-server but no host keys, so the SSH login of Vast.ai failed
+RUN mkdir -p /run/sshd && ssh-keygen -A
 WORKDIR /root/quadrotor-wind-corridors
 CMD ["bash"]
